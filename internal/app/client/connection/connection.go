@@ -6,20 +6,38 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 )
 
 // HandleConnection ...
 func HandleConnection(conn net.Conn) {
 	// conn.SetDeadline(time.Now().Add(time.Second * 5))
-	r := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)
+	pings := 0
+	ping := make(chan struct{})
 
-	// Wait for cmd
+	msgChan := make(chan string)
+	go ReadConn(conn, msgChan)
+
+	// Wait for cmd or failed ping
+	var s string
+	var ok bool
 	for {
-		s, err := r.ReadString(byte(0x0))
-		if err != nil {
-			log.Println("Client received error", s, err.Error())
-			break
+		select {
+		case _, ok := <-ping:
+			if !ok {
+				log.Println("Ping channel closed but shouldn't be!")
+				return
+			}
+			close(ping)
+			log.Println("Client failed to receive PING")
+			return
+		case s, ok = <-msgChan:
+			log.Println("Client reading...")
+			if !ok {
+				log.Println("Closed from error")
+				return
+			}
 		}
 
 		// Trim 0x0
@@ -38,7 +56,14 @@ func HandleConnection(conn net.Conn) {
 			w.WriteString("HI")
 			w.WriteByte(0x0)
 			w.Flush()
+			go KeepAlive(conn, ping)
 			go SendMessage(w)
+		case cmd[0] == "PING":
+			if pings > 2 && false {
+				continue
+			}
+			pings++
+			ping <- struct{}{}
 		case cmd[0] == "MSG":
 			if len(cmd) > 2 {
 				from := cmd[1]
@@ -61,5 +86,45 @@ func SendMessage(w *bufio.Writer) {
 		w.WriteString(msg)
 		w.WriteByte(0x0)
 		w.Flush()
+	}
+}
+
+func ReadConn(conn net.Conn, msg chan string) {
+	r := bufio.NewReader(conn)
+
+	for {
+		s, err := r.ReadString(byte(0x0))
+		if err != nil {
+			log.Println("Client received error", s, err.Error())
+			close(msg)
+			return
+		}
+		msg <- s
+	}
+}
+
+func KeepAlive(conn net.Conn, ping chan struct{}) {
+	ticker := time.NewTicker(time.Second * 10)
+	defer ticker.Stop()
+	w := bufio.NewWriter(conn)
+
+	writePong := func() {
+		ticker.Stop()
+		log.Println("Sending PONG")
+		w.WriteString("PONG")
+		w.WriteByte(0x0)
+		w.Flush()
+		ticker.Reset(time.Second * 6)
+	}
+
+	for {
+		select {
+		case <- ticker.C:
+			ping <- struct{}{}
+			return
+		case <- ping:
+			log.Println("Received PING")
+			writePong()
+		}
 	}
 }
