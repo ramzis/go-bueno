@@ -19,6 +19,7 @@ func Listen(URL url.URL, connectionHandler func(net.Conn)) {
 		} else {
 			log.Println(conn.RemoteAddr(), "connected")
 			go func() {
+				defer conn.Close()
 				defer log.Println("Connection to", conn.RemoteAddr().String(), "ended")
 				connectionHandler(conn)
 			}()
