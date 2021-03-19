@@ -3,6 +3,7 @@ package bueno
 import (
 	"bufio"
 	"fmt"
+	handler "github.com/ramzis/bueno/internal/pkg/connection"
 	"log"
 	"net"
 	"strings"
@@ -10,21 +11,21 @@ import (
 )
 
 func (b *Bueno) HandleConnection(conn net.Conn) {
-	w := bufio.NewWriter(conn)
+
+	err := handler.PerformHandshake(conn, true)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	pong := make(chan struct{})
+	go b.KeepAlive(conn, pong)
 
 	msgChan := make(chan string)
-	go b.ReadConn(conn, msgChan)
+	go handler.ReadConn(conn, msgChan)
 
-	// Write greeting
-	w.WriteString("HI")
-	w.WriteByte(0x0)
-	w.Flush()
-
-	// Wait for HI response or timeout
-	responded := false
-	conn.SetReadDeadline(time.Now().Add(time.Second * 5))
+	defer b.RemoveConn(conn)
+	b.RegisterConn(conn)
 
 	// Wait for cmd or failed pong
 	var s string
@@ -47,28 +48,15 @@ func (b *Bueno) HandleConnection(conn net.Conn) {
 				}
 		}
 
-		// Trim 0x0
-		s = s[:len(s)-1]
-
-		log.Println("Server received", s)
-
-		cmd := strings.Split(s, " ")
-		if len(cmd) < 1 {
-			log.Println("Invalid cmd received", cmd)
+		cmd, err := handler.Decode(s)
+		if err != nil {
+			log.Println(err)
 			continue
 		}
 
 		switch {
 		case cmd[0] == "HI":
-			if responded {
-				continue
-			}
-			responded = true
-			_ = conn.SetReadDeadline(time.Time{})
-			b.RegisterConn(conn)
-			go b.KeepAlive(conn, pong)
-			//goland:noinspection ALL
-			defer b.RemoveConn(conn)
+			log.Println("Unexpected HI after handshake")
 		case cmd[0] == "PONG":
 			pong <- struct{}{}
 		case cmd[0] == "MSG":
@@ -79,20 +67,6 @@ func (b *Bueno) HandleConnection(conn net.Conn) {
 		default:
 			log.Println(s, "is unhandled")
 		}
-	}
-}
-
-func (b *Bueno) ReadConn(conn net.Conn, msg chan string) {
-	r := bufio.NewReader(conn)
-
-	for {
-		s, err := r.ReadString(byte(0x0))
-		if err != nil {
-			log.Println("Server received error", s, err.Error())
-			close(msg)
-			return
-		}
-		msg <- s
 	}
 }
 

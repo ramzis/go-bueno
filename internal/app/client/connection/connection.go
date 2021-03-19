@@ -2,6 +2,8 @@ package connection
 
 import (
 	"bufio"
+	"fmt"
+	handler "github.com/ramzis/bueno/internal/pkg/connection"
 	"log"
 	"net"
 	"os"
@@ -11,12 +13,21 @@ import (
 
 // HandleConnection ...
 func HandleConnection(conn net.Conn) {
+
+	err := handler.PerformHandshake(conn, false)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	w := bufio.NewWriter(conn)
+	go SendMessage(w)
 
 	ping := make(chan struct{})
+	go KeepAlive(conn, ping)
 
 	msgChan := make(chan string)
-	go ReadConn(conn, msgChan)
+	go handler.ReadConn(conn, msgChan)
 
 	// Wait for cmd or failed ping
 	var s string
@@ -39,24 +50,15 @@ func HandleConnection(conn net.Conn) {
 			}
 		}
 
-		// Trim 0x0
-		s = s[:len(s)-1]
-
-		log.Println("Client received", s)
-		
-		cmd := strings.Split(s, " ")
-		if len(cmd) < 1 {
-			log.Println("Invalid cmd received", cmd)
+		cmd, err := handler.Decode(s)
+		if err != nil {
+			log.Println(err)
 			continue
 		}
 
 		switch {
 		case cmd[0] == "HI":
-			w.WriteString("HI")
-			w.WriteByte(0x0)
-			w.Flush()
-			go KeepAlive(conn, ping)
-			go SendMessage(w)
+			log.Println("Unexpected HI after handshake")
 		case cmd[0] == "PING":
 			ping <- struct{}{}
 		case cmd[0] == "MSG":
@@ -81,20 +83,6 @@ func SendMessage(w *bufio.Writer) {
 		w.WriteString(msg)
 		w.WriteByte(0x0)
 		w.Flush()
-	}
-}
-
-func ReadConn(conn net.Conn, msg chan string) {
-	r := bufio.NewReader(conn)
-
-	for {
-		s, err := r.ReadString(byte(0x0))
-		if err != nil {
-			log.Println("Client received error", s, err.Error())
-			close(msg)
-			return
-		}
-		msg <- s
 	}
 }
 
