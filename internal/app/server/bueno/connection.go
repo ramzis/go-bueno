@@ -54,12 +54,12 @@ func (b *Bueno) HandleConnection(conn net.Conn) {
 			continue
 		}
 
-		switch {
-		case cmd[0] == "HI":
+		switch cmd[0] {
+		case "HI":
 			log.Println("Unexpected HI after handshake")
-		case cmd[0] == "PONG":
+		case "PONG":
 			pong <- struct{}{}
-		case cmd[0] == "MSG":
+		case "MSG":
 			if len(cmd) > 1 {
 				msg := strings.Join(cmd[1:], " ")
 				b.TellEveryone(fmt.Sprintf("MSG %s %s", conn.RemoteAddr().String(), msg))
