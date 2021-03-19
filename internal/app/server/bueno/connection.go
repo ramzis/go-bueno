@@ -76,6 +76,8 @@ func (b *Bueno) HandleConnection(conn net.Conn) {
 				msg := strings.Join(cmd[1:], " ")
 				b.TellEveryone(fmt.Sprintf("MSG %s %s", conn.RemoteAddr().String(), msg))
 			}
+		default:
+			log.Println(s, "is unhandled")
 		}
 	}
 }
