@@ -14,7 +14,7 @@ func (b *Bueno) HandleConnection(conn net.Conn) {
 
 	err := handler.PerformHandshake(conn, true)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 
