@@ -42,8 +42,8 @@ func HandleConnection(conn net.Conn) {
 		// Trim 0x0
 		s = s[:len(s)-1]
 
-		// log.Println("Client received", s)
-
+		log.Println("Client received", s)
+		
 		cmd := strings.Split(s, " ")
 		if len(cmd) < 1 {
 			log.Println("Invalid cmd received", cmd)
