@@ -11,9 +11,8 @@ import (
 
 // HandleConnection ...
 func HandleConnection(conn net.Conn) {
-	// conn.SetDeadline(time.Now().Add(time.Second * 5))
 	w := bufio.NewWriter(conn)
-	pings := 0
+
 	ping := make(chan struct{})
 
 	msgChan := make(chan string)
@@ -59,10 +58,6 @@ func HandleConnection(conn net.Conn) {
 			go KeepAlive(conn, ping)
 			go SendMessage(w)
 		case cmd[0] == "PING":
-			if pings > 2 && false {
-				continue
-			}
-			pings++
 			ping <- struct{}{}
 		case cmd[0] == "MSG":
 			if len(cmd) > 2 {

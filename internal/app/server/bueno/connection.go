@@ -10,10 +10,12 @@ import (
 )
 
 func (b *Bueno) HandleConnection(conn net.Conn) {
-	// conn.SetDeadline(time.Now().Add(time.Second * 3))
 	w := bufio.NewWriter(conn)
 
 	pong := make(chan struct{})
+
+	msgChan := make(chan string)
+	go b.ReadConn(conn, msgChan)
 
 	// Write greeting
 	w.WriteString("HI")
@@ -23,9 +25,6 @@ func (b *Bueno) HandleConnection(conn net.Conn) {
 	// Wait for HI response or timeout
 	responded := false
 	conn.SetReadDeadline(time.Now().Add(time.Second * 5))
-
-	msgChan := make(chan string)
-	go b.ReadConn(conn, msgChan)
 
 	// Wait for cmd or failed pong
 	var s string
