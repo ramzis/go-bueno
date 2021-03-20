@@ -63,7 +63,6 @@ func ReadConn(conn net.Conn, msg chan string) {
 	}
 }
 
-
 func Decode(s string) ([]string, error) {
 	// Trim 0x0
 	s = s[:len(s)-1]
@@ -94,10 +93,10 @@ func KeepAlive(conn net.Conn, ka chan struct{}, rxDelay, txDelay, networkDelay t
 
 	for {
 		select {
-		case <- ticker.C:
+		case <-ticker.C:
 			ka <- struct{}{}
 			return
-		case <- ka:
+		case <-ka:
 			log.Println("Received KA")
 			writeKeepAlive(txDelay)
 		}

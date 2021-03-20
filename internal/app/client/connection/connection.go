@@ -11,14 +11,14 @@ func HandleConnection(conn net.Conn) {
 
 	for {
 		select {
-		case <- r:
+		case <-r:
 			w <- "Test"
 			//if len(cmd) > 2 {
 			//	from := cmd[1]
 			//	msg := strings.Join(cmd[2:], " ")
 			//	log.Printf("[%s]: %s", from, msg)
 			//}
-		case err := <- e:
+		case err := <-e:
 			log.Println(err)
 			return
 		}
