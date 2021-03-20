@@ -49,13 +49,14 @@ func PerformHandshake(conn net.Conn, isServer bool) error {
 	return nil
 }
 
-func ReadConn(conn net.Conn, msg chan string) {
+func ReadConn(conn net.Conn, msg, errChan chan string) {
 	r := bufio.NewReader(conn)
 
 	for {
 		s, err := r.ReadString(byte(0x0))
 		if err != nil {
-			log.Println("received error", s, err.Error())
+			errChan <- err.Error()
+			close(errChan)
 			close(msg)
 			return
 		}
@@ -138,7 +139,8 @@ func HandleConnection(conn net.Conn, isServer bool) (
 		}
 
 		msgChan := make(chan string)
-		go ReadConn(conn, msgChan)
+		msgErrChan := make(chan string)
+		go ReadConn(conn, msgChan, msgErrChan)
 
 		w := bufio.NewWriter(conn)
 		go SendMessage(w)
@@ -157,11 +159,18 @@ func HandleConnection(conn net.Conn, isServer bool) (
 				e <- "failed to receive KA"
 				return
 			case s, ok = <-msgChan:
-				log.Println("reading...")
 				if !ok {
 					e <- "closed from error"
 					return
 				}
+				log.Println("reading...")
+			case s, ok = <-msgErrChan:
+				if !ok {
+					e <- "closed from error"
+					return
+				}
+				e <- s
+				return
 			}
 
 			cmd, err := Decode(s)
