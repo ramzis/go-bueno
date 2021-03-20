@@ -151,16 +151,16 @@ func HandleConnection(conn net.Conn, isServer bool) (
 			select {
 			case _, ok := <-keepAlive:
 				if !ok {
-					log.Println("Keep Alive channel closed but shouldn't be!")
+					e <- "Keep Alive channel closed but shouldn't be!"
 					return
 				}
 				close(keepAlive)
-				log.Println("failed to receive KA")
+				e <- "failed to receive KA"
 				return
 			case s, ok = <-msgChan:
 				log.Println("reading...")
 				if !ok {
-					log.Println("closed from error")
+					e <- "closed from error"
 					return
 				}
 			}
@@ -180,13 +180,7 @@ func HandleConnection(conn net.Conn, isServer bool) (
 				if len(cmd) > 1 {
 					msg := strings.Join(cmd[1:], " ")
 					r <- msg
-					//b.TellEveryone(fmt.Sprintf("MSG %s %s", conn.RemoteAddr().String(), msg))
 				}
-				//if len(cmd) > 2 {
-				//	from := cmd[1]
-				//	msg := strings.Join(cmd[2:], " ")
-				//	log.Printf("[%s]: %s", from, msg)
-				//}
 			default:
 				log.Println(s, "is unhandled")
 			}

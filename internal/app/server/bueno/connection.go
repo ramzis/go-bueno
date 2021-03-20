@@ -11,13 +11,14 @@ func (b *Bueno) HandleConnection(conn net.Conn) {
 
 	for {
 		select {
-			case <- r:
-				w <- "Test"
-				//defer b.RemoveConn(conn)
-				//b.RegisterConn(conn)
-			case <- e:
-				log.Println(e)
-				return
+		case <-r:
+			w <- "Test"
+			//defer b.RemoveConn(conn)
+			//b.RegisterConn(conn)
+			//b.TellEveryone(fmt.Sprintf("MSG %s %s", conn.RemoteAddr().String(), msg))
+		case err := <-e:
+			log.Println(err)
+			return
 		}
 	}
 }
