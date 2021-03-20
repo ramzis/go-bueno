@@ -9,10 +9,14 @@ import (
 func HandleConnection(conn net.Conn) {
 	r, w, e := handler.HandleConnection(conn, false)
 
+	input := make(chan string)
+	go handler.ReadInput(input)
+
 	for {
 		select {
+		case line := <-input:
+			w <- line
 		case <-r:
-			w <- "Test"
 			//if len(cmd) > 2 {
 			//	from := cmd[1]
 			//	msg := strings.Join(cmd[2:], " ")

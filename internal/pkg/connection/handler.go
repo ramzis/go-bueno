@@ -64,11 +64,41 @@ func ReadConn(conn net.Conn, msg, errChan chan string) {
 	}
 }
 
+func WriteConn(conn net.Conn, msg, errChan chan string) {
+	w := bufio.NewWriter(conn)
+
+	for {
+		select {
+		case s, ok := <-msg:
+			if !ok {
+				close(errChan)
+				return
+			}
+			_, err := w.WriteString("MSG ")
+			if err != nil {
+				errChan <- err.Error()
+			}
+			_, err = w.WriteString(s)
+			if err != nil {
+				errChan <- err.Error()
+			}
+			err = w.WriteByte(0x0)
+			if err != nil {
+				errChan <- err.Error()
+			}
+			err = w.Flush()
+			if err != nil {
+				errChan <- err.Error()
+			}
+		}
+	}
+}
+
 func Decode(s string) ([]string, error) {
 	// Trim 0x0
 	s = s[:len(s)-1]
 
-	log.Println("Decoding", s)
+	//log.Println("Decoding", s)
 
 	cmd := strings.Split(s, " ")
 	if len(cmd) < 1 {
@@ -85,7 +115,7 @@ func KeepAlive(conn net.Conn, ka chan struct{}, rxDelay, txDelay, networkDelay t
 	writeKeepAlive := func(delay time.Duration) {
 		ticker.Stop()
 		time.Sleep(delay)
-		log.Println("Sending KA")
+		//log.Println("Sending KA")
 		w.WriteString("KA")
 		w.WriteByte(0x0)
 		w.Flush()
@@ -99,7 +129,7 @@ func KeepAlive(conn net.Conn, ka chan struct{}, rxDelay, txDelay, networkDelay t
 			ka <- struct{}{}
 			return
 		case <-ka:
-			log.Println("Received KA")
+			//log.Println("Received KA")
 			writeKeepAlive(txDelay)
 		}
 	}
@@ -143,8 +173,9 @@ func HandleConnection(conn net.Conn, isServer bool) (
 		msgErrChan := make(chan string)
 		go ReadConn(conn, msgChan, msgErrChan)
 
-		w := bufio.NewWriter(conn)
-		go SendMessage(w)
+		writeChan := make(chan string)
+		writeErrChan := make(chan string)
+		go WriteConn(conn, writeChan, writeErrChan)
 
 		// Wait for cmd or failed keepAlive
 		var s string
@@ -159,12 +190,25 @@ func HandleConnection(conn net.Conn, isServer bool) (
 				close(keepAlive)
 				e <- "failed to receive KA"
 				return
+			case msg, ok := <-w:
+				if !ok {
+					e <- "write message channel closed but shouldn't be"
+					return
+				}
+				writeChan <- msg
+				continue
+			case err, ok := <-msgErrChan:
+				if !ok {
+					e <- "write message error channel closed but shouldn't be"
+					return
+				}
+				log.Println("error writing message", err)
 			case s, ok = <-msgChan:
 				if !ok {
 					e <- "closed from error"
 					return
 				}
-				log.Println("reading...")
+				//log.Println("reading...")
 			case s, ok = <-msgErrChan:
 				if !ok {
 					e <- "closed from error"
@@ -199,15 +243,12 @@ func HandleConnection(conn net.Conn, isServer bool) (
 	return r, w, e
 }
 
-func SendMessage(w *bufio.Writer) {
+func ReadInput(input chan string) {
 	r := bufio.NewReader(os.Stdin)
 	for {
 		msg, _ := r.ReadString('\n')
 		// convert CRLF to LF
 		msg = strings.Replace(msg, "\n", "", -1)
-		w.WriteString("MSG ")
-		w.WriteString(msg)
-		w.WriteByte(0x0)
-		w.Flush()
+		input <- msg
 	}
 }

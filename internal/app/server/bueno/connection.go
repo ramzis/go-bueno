@@ -11,7 +11,9 @@ func (b *Bueno) HandleConnection(conn net.Conn) {
 
 	for {
 		select {
-		case <-r:
+		case cmd := <-r:
+			log.Println("Server got", cmd)
+			continue
 			w <- "Test"
 			//defer b.RemoveConn(conn)
 			//b.RegisterConn(conn)
