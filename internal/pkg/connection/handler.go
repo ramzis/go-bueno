@@ -148,7 +148,7 @@ func HandleConnection(conn net.Conn, isServer bool) (
 	go func() {
 		err := PerformHandshake(conn, isServer)
 		if err != nil {
-			log.Println(err)
+			e <- err.Error()
 			return
 		}
 
@@ -197,21 +197,23 @@ func HandleConnection(conn net.Conn, isServer bool) (
 				}
 				writeChan <- msg
 				continue
-			case err, ok := <-msgErrChan:
+			case s, ok := <-writeErrChan:
 				if !ok {
-					e <- "write message error channel closed but shouldn't be"
+					e <- "closed write error channel from error"
 					return
 				}
-				log.Println("error writing message", err)
+				log.Println("error writing message", s)
+				continue
 			case s, ok = <-msgChan:
 				if !ok {
-					e <- "closed from error"
+					e <- "closed message channel from error"
 					return
 				}
+				break
 				//log.Println("reading...")
-			case s, ok = <-msgErrChan:
+			case s, ok := <-msgErrChan:
 				if !ok {
-					e <- "closed from error"
+					e <- "closed message error channel from error"
 					return
 				}
 				e <- s
