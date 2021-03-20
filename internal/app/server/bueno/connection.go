@@ -15,6 +15,9 @@ func (b *Bueno) HandleConnection(conn net.Conn) {
 	defer b.RemoveConn(id)
 	b.RegisterConn(id, Connection{r, w, e})
 
+	defer b.TellEveryoneBut(id, fmt.Sprintf("%s %s has disconnected", "Server", id))
+	b.TellEveryoneBut(id, fmt.Sprintf("%s %s has connected", "Server", id))
+
 	for {
 		select {
 		case cmd := <-r:
