@@ -1,6 +1,7 @@
 package bueno
 
 import (
+	"fmt"
 	handler "github.com/ramzis/bueno/internal/pkg/connection"
 	"log"
 	"net"
@@ -9,15 +10,14 @@ import (
 func (b *Bueno) HandleConnection(conn net.Conn) {
 	r, w, e := handler.HandleConnection(conn, true)
 
+	defer b.RemoveConn(conn.RemoteAddr().String())
+	b.RegisterConn(conn.RemoteAddr().String(), Connection{r, w, e})
+
 	for {
 		select {
 		case cmd := <-r:
 			log.Println("Server got", cmd)
-			continue
-			w <- "Test"
-			//defer b.RemoveConn(conn)
-			//b.RegisterConn(conn)
-			//b.TellEveryone(fmt.Sprintf("MSG %s %s", conn.RemoteAddr().String(), msg))
+			b.TellEveryone(fmt.Sprintf("%s %s", conn.RemoteAddr().String(), cmd))
 		case err := <-e:
 			log.Println(err)
 			return
