@@ -95,6 +95,7 @@ func KeepAlive(conn net.Conn, ka chan struct{}, rxDelay, txDelay, networkDelay t
 	for {
 		select {
 		case <-ticker.C:
+			log.Println("timed out waiting for KA")
 			ka <- struct{}{}
 			return
 		case <-ka:
