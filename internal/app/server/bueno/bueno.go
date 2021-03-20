@@ -40,3 +40,12 @@ func (b *Bueno) TellEveryone(s string) {
 		conn.W <- s
 	}
 }
+
+func (b *Bueno) TellEveryoneBut(id string, s string) {
+	for connId, conn := range b.conns {
+		if connId == id {
+			continue
+		}
+		conn.W <- s
+	}
+}

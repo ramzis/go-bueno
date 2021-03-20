@@ -10,14 +10,16 @@ import (
 func (b *Bueno) HandleConnection(conn net.Conn) {
 	r, w, e := handler.HandleConnection(conn, true)
 
-	defer b.RemoveConn(conn.RemoteAddr().String())
-	b.RegisterConn(conn.RemoteAddr().String(), Connection{r, w, e})
+	id := conn.RemoteAddr().String()
+
+	defer b.RemoveConn(id)
+	b.RegisterConn(id, Connection{r, w, e})
 
 	for {
 		select {
 		case cmd := <-r:
 			log.Println("Server got", cmd)
-			b.TellEveryone(fmt.Sprintf("%s %s", conn.RemoteAddr().String(), cmd))
+			b.TellEveryoneBut(id, fmt.Sprintf("%s %s", id, cmd))
 		case err := <-e:
 			log.Println(err)
 			return
