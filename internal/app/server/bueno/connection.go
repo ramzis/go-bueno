@@ -1,7 +1,6 @@
 package bueno
 
 import (
-	"bufio"
 	"fmt"
 	handler "github.com/ramzis/bueno/internal/pkg/connection"
 	"log"
@@ -19,7 +18,11 @@ func (b *Bueno) HandleConnection(conn net.Conn) {
 	}
 
 	pong := make(chan struct{})
-	go b.KeepAlive(conn, pong)
+	rxDelay := time.Duration(0)
+	txDelay := time.Second * 5
+	netDelay := time.Second * 1
+	go handler.KeepAlive(conn, pong, rxDelay, txDelay, netDelay)
+	pong <- struct{}{}
 
 	msgChan := make(chan string)
 	go handler.ReadConn(conn, msgChan)
@@ -57,7 +60,7 @@ func (b *Bueno) HandleConnection(conn net.Conn) {
 		switch cmd[0] {
 		case "HI":
 			log.Println("Unexpected HI after handshake")
-		case "PONG":
+		case "KA":
 			pong <- struct{}{}
 		case "MSG":
 			if len(cmd) > 1 {
@@ -66,35 +69,6 @@ func (b *Bueno) HandleConnection(conn net.Conn) {
 			}
 		default:
 			log.Println(s, "is unhandled")
-		}
-	}
-}
-
-func (b *Bueno) KeepAlive(conn net.Conn, pong chan struct{}) {
-	ticker := time.NewTicker(time.Second * 5)
-	defer ticker.Stop()
-	w := bufio.NewWriter(conn)
-
-	writePing := func(delay time.Duration) {
-		ticker.Stop()
-		time.Sleep(delay)
-		log.Println("Sending PING")
-		w.WriteString("PING")
-		w.WriteByte(0x0)
-		w.Flush()
-		ticker.Reset(time.Second * 5)
-	}
-
-	writePing(0)
-
-	for {
-		select {
-			case <- ticker.C:
-				pong <- struct{}{}
-				return
-			case <- pong:
-				log.Println("Received PONG")
-				writePing(time.Second * 5)
 		}
 	}
 }

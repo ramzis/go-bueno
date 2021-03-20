@@ -75,3 +75,30 @@ func Decode(s string) ([]string, error) {
 	}
 	return cmd, nil
 }
+
+func KeepAlive(conn net.Conn, ka chan struct{}, rxDelay, txDelay, networkDelay time.Duration) {
+	ticker := time.NewTicker(rxDelay + networkDelay)
+	defer ticker.Stop()
+	w := bufio.NewWriter(conn)
+
+	writeKeepAlive := func(delay time.Duration) {
+		ticker.Stop()
+		time.Sleep(delay)
+		log.Println("Sending KA")
+		w.WriteString("KA")
+		w.WriteByte(0x0)
+		w.Flush()
+		ticker.Reset(rxDelay + networkDelay)
+	}
+
+	for {
+		select {
+		case <- ticker.C:
+			ka <- struct{}{}
+			return
+		case <- ka:
+			log.Println("Received KA")
+			writeKeepAlive(txDelay)
+		}
+	}
+}

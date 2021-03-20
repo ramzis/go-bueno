@@ -24,7 +24,10 @@ func HandleConnection(conn net.Conn) {
 	go SendMessage(w)
 
 	ping := make(chan struct{})
-	go KeepAlive(conn, ping)
+	rxDelay := time.Second * 5
+	txDelay := time.Duration(0)
+	netDelay := time.Second * 1
+	go handler.KeepAlive(conn, ping, rxDelay, txDelay, netDelay)
 
 	msgChan := make(chan string)
 	go handler.ReadConn(conn, msgChan)
@@ -59,7 +62,7 @@ func HandleConnection(conn net.Conn) {
 		switch cmd[0] {
 		case "HI":
 			log.Println("Unexpected HI after handshake")
-		case "PING":
+		case "KA":
 			ping <- struct{}{}
 		case "MSG":
 			if len(cmd) > 2 {
@@ -83,31 +86,5 @@ func SendMessage(w *bufio.Writer) {
 		w.WriteString(msg)
 		w.WriteByte(0x0)
 		w.Flush()
-	}
-}
-
-func KeepAlive(conn net.Conn, ping chan struct{}) {
-	ticker := time.NewTicker(time.Second * 10)
-	defer ticker.Stop()
-	w := bufio.NewWriter(conn)
-
-	writePong := func() {
-		ticker.Stop()
-		log.Println("Sending PONG")
-		w.WriteString("PONG")
-		w.WriteByte(0x0)
-		w.Flush()
-		ticker.Reset(time.Second * 6)
-	}
-
-	for {
-		select {
-		case <- ticker.C:
-			ping <- struct{}{}
-			return
-		case <- ping:
-			log.Println("Received PING")
-			writePong()
-		}
 	}
 }
