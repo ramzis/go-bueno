@@ -135,11 +135,7 @@ func KeepAlive(conn net.Conn, ka chan struct{}, rxDelay, txDelay, networkDelay t
 	}
 }
 
-func HandleConnection(conn net.Conn, isServer bool) (
-	chan string,
-	chan string,
-	chan string,
-) {
+func HandleConnection(conn net.Conn, isServer bool) *Connection {
 
 	r := make(chan string)
 	w := make(chan string)
@@ -242,7 +238,7 @@ func HandleConnection(conn net.Conn, isServer bool) (
 		}
 	}()
 
-	return r, w, e
+	return &Connection{r, w, e}
 }
 
 func ReadInput(input chan string) {
@@ -253,4 +249,8 @@ func ReadInput(input chan string) {
 		msg = strings.Replace(msg, "\n", "", -1)
 		input <- msg
 	}
+}
+
+type Connection struct {
+	R, W, E chan string
 }

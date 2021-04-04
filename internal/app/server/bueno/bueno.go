@@ -1,19 +1,17 @@
 package bueno
 
-type Connection struct {
-	R, W, E chan string
-}
+import "github.com/ramzis/bueno/internal/pkg/connection"
 
 type Bueno struct {
-	conns     map[string]Connection
+	conns     map[string]*handler.Connection
 	listeners []func()
 }
 
 func NewBueno() *Bueno {
-	return &Bueno{conns: make(map[string]Connection, 0)}
+	return &Bueno{conns: make(map[string]*handler.Connection, 0)}
 }
 
-func (b *Bueno) RegisterConn(id string, conn Connection) {
+func (b *Bueno) RegisterConn(id string, conn *handler.Connection) {
 	b.conns[id] = conn
 	b.OnUpdateConns()
 }

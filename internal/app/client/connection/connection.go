@@ -8,7 +8,7 @@ import (
 )
 
 func HandleConnection(conn net.Conn) {
-	r, w, e := handler.HandleConnection(conn, false)
+	c := handler.HandleConnection(conn, false)
 
 	input := make(chan string)
 	go handler.ReadInput(input)
@@ -16,15 +16,15 @@ func HandleConnection(conn net.Conn) {
 	for {
 		select {
 		case line := <-input:
-			w <- line
-		case cmd := <-r:
+			c.W <- line
+		case cmd := <-c.R:
 			cmds := strings.Split(cmd, " ")
 			if len(cmds) > 1 {
 				from := cmds[0]
 				msg := strings.Join(cmds[1:], " ")
 				log.Printf("[%s]: %s", from, msg)
 			}
-		case err := <-e:
+		case err := <-c.E:
 			log.Println(err)
 			return
 		}
