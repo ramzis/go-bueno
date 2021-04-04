@@ -21,14 +21,19 @@ func (b *server) HandleConnection(conn net.Conn) {
 	defer b.TellEveryoneBut(id, fmt.Sprintf("%s %s has disconnected", "Server", id))
 	b.TellEveryoneBut(id, fmt.Sprintf("%s %s has connected", "Server", id))
 
+	lobbyMsgChan := b.lobby.GetMessageChan()
+
 	for {
 		select {
 		case cmd := <-c.R:
 			log.Println("Server got", cmd)
 			b.TellEveryoneBut(id, fmt.Sprintf("%s %s", id, cmd))
+			lobbyMsgChan <- cmd
 		case err := <-c.E:
 			log.Println(err)
 			return
+		case lobbyMsg := <-lobbyMsgChan:
+			log.Println("Server got from lobby", lobbyMsg)
 		}
 	}
 }
