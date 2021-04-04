@@ -11,7 +11,7 @@ func Listen(URL url.URL, connectionHandler func(net.Conn)) {
 	if err != nil {
 		panic(err)
 	}
-	log.Print("Server listening on", ln.Addr().String())
+	log.Print("Server listening on ", ln.Addr().String())
 	for {
 		conn, err := ln.Accept()
 		if err != nil {

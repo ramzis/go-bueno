@@ -10,7 +10,7 @@ func DialTcp(URL url.URL, connectionHandler func(net.Conn)) {
 	log.Println("Connecting to server...")
 	conn, err := net.Dial("tcp", URL.Host)
 	if err != nil {
-		log.Println("Failed to establish connection to", URL.Host)
+		log.Println("Failed to establish connection to", URL.Host, err)
 	} else {
 		log.Println("Connected to", conn.RemoteAddr().String())
 		finished := make(chan bool)
