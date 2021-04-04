@@ -1,4 +1,4 @@
-package bueno
+package server
 
 import (
 	"fmt"
@@ -7,13 +7,16 @@ import (
 	"net"
 )
 
-func (b *Bueno) HandleConnection(conn net.Conn) {
+func (b *server) HandleConnection(conn net.Conn) {
 	c := handler.HandleConnection(conn, true)
 
 	id := conn.RemoteAddr().String()
 
 	defer b.RemoveConn(id)
 	b.RegisterConn(id, c)
+
+	defer b.lobby.PlayerLeave()
+	b.lobby.PlayerJoin()
 
 	defer b.TellEveryoneBut(id, fmt.Sprintf("%s %s has disconnected", "Server", id))
 	b.TellEveryoneBut(id, fmt.Sprintf("%s %s has connected", "Server", id))
