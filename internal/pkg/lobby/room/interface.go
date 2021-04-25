@@ -10,7 +10,8 @@ type Room interface {
 	// Removes an entity from a room
 	Leave(ID entity.ID) bool
 	GetID() ID
-	Write(string)
+	SendMessageToRoomOne(to entity.ID, msg string)
+	SendMessageToRoomAll(msg string)
 	GetEntities() []entity.ID
 }
 

@@ -15,8 +15,14 @@ type room struct {
 	entities map[entity.ID]entity.Entity
 }
 
-func (r *room) Write(msg string) {
-	r.lobby.Write(msg)
+func (r *room) SendMessageToRoomOne(to entity.ID, msg string) {
+	// TODO: update with actual room entity
+	r.lobby.SendMessageToRoomOne(entity.ID(r.ID), to, r.ID, msg)
+}
+
+func (r *room) SendMessageToRoomAll(msg string) {
+	// TODO: update with actual room entity
+	r.lobby.SendMessageToRoomAll(entity.ID(r.ID), r.ID, msg)
 }
 
 func (r *room) Join(entity entity.Entity) {
