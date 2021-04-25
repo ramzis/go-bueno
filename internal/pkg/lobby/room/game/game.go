@@ -21,8 +21,12 @@ func (g *game) AddPlayer(entity entity.Entity) {
 	g.players[entity.GetID()] = entity
 }
 
-func (g *game) Send(ID entity.ID, msg string) {
-	g.room.Write(msg) // TODO: encode entity
+func (g *game) SendMessageToRoomOne(to entity.ID, msg string) {
+	g.room.SendMessageToRoomOne(to, msg)
+}
+
+func (g *game) SendMessageToRoomAll(msg string) {
+	g.room.SendMessageToRoomAll(msg)
 }
 
 func (g *game) Receive(ID entity.ID, msg string) {
