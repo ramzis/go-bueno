@@ -15,25 +15,24 @@ func (b *server) HandleConnection(conn net.Conn) {
 	defer b.RemoveConn(id)
 	b.RegisterConn(id, c)
 
-	defer b.lobby.PlayerLeave()
-	b.lobby.PlayerJoin()
+	entityID := b.lobby.Join()
+	defer b.lobby.Leave(entityID)
+
+	b.resolver[entityID] = id
+	defer delete(b.resolver, entityID)
 
 	defer b.TellEveryoneBut(id, fmt.Sprintf("%s %s has disconnected", "Server", id))
 	b.TellEveryoneBut(id, fmt.Sprintf("%s %s has connected", "Server", id))
 
-	lobbyMsgChan := b.lobby.GetMessageChan()
-
 	for {
 		select {
 		case cmd := <-c.R:
-			log.Println("Server got", cmd)
-			b.TellEveryoneBut(id, fmt.Sprintf("%s %s", id, cmd))
-			lobbyMsgChan <- cmd
+			log.Println("Server got from conn", cmd)
+			//b.TellEveryoneBut(id, fmt.Sprintf("%s %s", id, cmd))
+			b.lobby.Handle(entityID, cmd)
 		case err := <-c.E:
 			log.Println(err)
 			return
-		case lobbyMsg := <-lobbyMsgChan:
-			log.Println("Server got from lobby", lobbyMsg)
 		}
 	}
 }
