@@ -15,5 +15,6 @@ type Room interface {
 }
 
 type Room2Lobby interface {
-	Write(msg string)
+	SendMessageToRoomAll(from entity.ID, room ID, msg string)
+	SendMessageToRoomOne(from entity.ID, to entity.ID, room ID, msg string)
 }
