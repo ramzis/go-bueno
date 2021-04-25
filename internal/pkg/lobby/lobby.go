@@ -50,7 +50,7 @@ func (l *lobby) Handle(from entity.ID, msg string) {
 	}
 }
 
-// Write sends an outgoing message to the connection handler
+// write sends an outgoing message to the connection handler
 func (l *lobby) write(msg string) {
 	l.c <- msg
 }
