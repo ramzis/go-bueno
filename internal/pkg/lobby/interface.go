@@ -8,7 +8,8 @@ import "github.com/ramzis/bueno/internal/pkg/lobby/entity"
 type Lobby interface {
 	Join() entity.ID
 	Leave(ID entity.ID)
-	// Used to notify the lobby and read its messages
+	// Returns a chan used to read the lobby's messages
 	GetMessageChan() chan string
+	// Used to notify the lobby
 	Handle(ID entity.ID, msg string)
 }
