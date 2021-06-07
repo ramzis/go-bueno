@@ -29,11 +29,7 @@ func (g *game) SendMessageToRoomAll(msg string) {
 	g.room.SendMessageToRoomAll(msg)
 }
 
-func (g *game) Receive(ID entity.ID, msg string) {
-	g.HandleMessage(ID, msg)
-}
-
-func (g *game) HandleMessage(ID entity.ID, msg string) {
+func (g *game) Handle(_ entity.ID, _ string) {
 	log.Println("Unhandled message in game")
 }
 

@@ -4,7 +4,8 @@ import "github.com/ramzis/bueno/internal/pkg/lobby/entity"
 
 type Game interface {
 	AddPlayer(entity entity.Entity)
-	Receive(ID entity.ID, msg string)
+	MessageHandler
+	Game2Room
 }
 
 type Game2Room interface {
