@@ -82,7 +82,7 @@ func (b *bueno) gameLoop() {
 	panic("Not implemented")
 }
 
-func (b *bueno) HandleMessage(ID entity.ID, msg string) {
+func (b *bueno) Handle(ID entity.ID, msg string) {
 	log.Printf("[BUENO] Handled message for %s: %s", ID, msg)
 }
 
