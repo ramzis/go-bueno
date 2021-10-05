@@ -11,14 +11,10 @@ func DialTcp(URL url.URL, connectionHandler func(net.Conn)) {
 	conn, err := net.Dial("tcp", URL.Host)
 	if err != nil {
 		log.Println("Failed to establish connection to", URL.Host, err)
-	} else {
-		log.Println("Connected to", conn.RemoteAddr().String())
-		finished := make(chan bool)
-		go func() {
-			defer log.Println("Connection to", conn.RemoteAddr().String(), "ended")
-			connectionHandler(conn)
-			finished <- true
-		}()
-		<-finished
+		return
 	}
+
+	defer log.Println("Connection to", conn.RemoteAddr(), "ended")
+	log.Println("Connected to", conn.RemoteAddr())
+	connectionHandler(conn)
 }
