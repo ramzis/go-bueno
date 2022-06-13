@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	connection.DialTcp(url.URL{Host: "172.28.231.89:8080"}, client.HandleConnection)
+	connection.DialTcp(url.URL{Host: ":8080"}, client.HandleConnection)
 }
