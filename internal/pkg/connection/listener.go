@@ -6,7 +6,7 @@ import (
 	"net/url"
 )
 
-func Listen(URL url.URL, connectionHandler func(net.Conn)) {
+func ListenTcp(URL url.URL, connectionHandler func(net.Conn)) {
 	ln, err := net.Listen("tcp", URL.Host)
 	if err != nil {
 		panic(err)

@@ -10,5 +10,5 @@ import (
 func main() {
 	lobby := lobby.New()
 	server := server.New(lobby)
-	connection.Listen(url.URL{Host: ":8080"}, server.HandleConnection)
+	connection.ListenTcp(url.URL{Host: ":8080"}, server.HandleConnection)
 }
