@@ -1,12 +1,11 @@
 package main
 
 import (
-	"net/url"
-
-	"github.com/ramzis/bueno/internal/app/client/connection"
+	"github.com/ramzis/bueno/internal/app/client"
 	"github.com/ramzis/bueno/internal/pkg/dialer"
+	"net/url"
 )
 
 func main() {
-	dialer.DialTcp(url.URL{Host: "172.28.231.89:8080"}, connection.HandleConnection)
+	dialer.DialTcp(url.URL{Host: "172.28.231.89:8080"}, client.HandleConnection)
 }

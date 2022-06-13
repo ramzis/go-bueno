@@ -1,4 +1,4 @@
-package connection
+package client
 
 import (
 	handler "github.com/ramzis/bueno/internal/pkg/connection"
