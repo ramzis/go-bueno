@@ -30,47 +30,47 @@ func New(lobby lobby.Lobby) Server {
 	return s
 }
 
-func (b *server) RegisterConn(id string, conn *connection.Connection) {
-	b.conns[id] = conn
-	b.OnUpdateConns()
+func (s *server) RegisterConn(id string, conn *connection.Connection) {
+	s.conns[id] = conn
+	s.OnUpdateConns()
 }
 
-func (b *server) RemoveConn(id string) {
-	if _, ok := b.conns[id]; ok {
-		delete(b.conns, id)
+func (s *server) RemoveConn(id string) {
+	if _, ok := s.conns[id]; ok {
+		delete(s.conns, id)
 	}
-	b.OnUpdateConns()
+	s.OnUpdateConns()
 }
 
-func (b *server) OnUpdateConns() {
-	for _, notify := range b.listeners {
+func (s *server) OnUpdateConns() {
+	for _, notify := range s.listeners {
 		notify()
 	}
 }
 
-func (b *server) RegisterConnListener(notify func()) {
-	b.listeners = append(b.listeners, notify)
+func (s *server) RegisterConnListener(notify func()) {
+	s.listeners = append(s.listeners, notify)
 }
 
-func (b *server) TellEveryone(s string) {
-	for _, conn := range b.conns {
-		conn.W <- s
+func (s *server) TellEveryone(msg string) {
+	for _, conn := range s.conns {
+		conn.W <- msg
 	}
 }
 
-func (b *server) TellEveryoneBut(id string, s string) {
-	for connId, conn := range b.conns {
+func (s *server) TellEveryoneBut(id string, msg string) {
+	for connId, conn := range s.conns {
 		if connId == id {
 			continue
 		}
-		conn.W <- s
+		conn.W <- msg
 	}
 }
 
-func (b *server) TellOne(id string, s string) {
-	for connId, conn := range b.conns {
+func (s *server) TellOne(id string, msg string) {
+	for connId, conn := range s.conns {
 		if connId == id {
-			conn.W <- s
+			conn.W <- msg
 			break
 		}
 	}

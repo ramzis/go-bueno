@@ -7,29 +7,29 @@ import (
 	"net"
 )
 
-func (b *server) HandleConnection(conn net.Conn) {
+func (s *server) HandleConnection(conn net.Conn) {
 	c := connection.HandleConnection(conn, true)
 
 	id := conn.RemoteAddr().String()
 
-	defer b.RemoveConn(id)
-	b.RegisterConn(id, c)
+	defer s.RemoveConn(id)
+	s.RegisterConn(id, c)
 
-	entityID := b.lobby.Join()
-	defer b.lobby.Leave(entityID)
+	entityID := s.lobby.Join()
+	defer s.lobby.Leave(entityID)
 
-	b.resolver[entityID] = id
-	defer delete(b.resolver, entityID)
+	s.resolver[entityID] = id
+	defer delete(s.resolver, entityID)
 
-	defer b.TellEveryoneBut(id, fmt.Sprintf("%s %s has disconnected", "Server", id))
-	b.TellEveryoneBut(id, fmt.Sprintf("%s %s has connected", "Server", id))
+	defer s.TellEveryoneBut(id, fmt.Sprintf("%s %s has disconnected", "Server", id))
+	s.TellEveryoneBut(id, fmt.Sprintf("%s %s has connected", "Server", id))
 
 	for {
 		select {
 		case cmd := <-c.R:
 			log.Println("Server got from conn", cmd)
-			//b.TellEveryoneBut(id, fmt.Sprintf("%s %s", id, cmd))
-			b.lobby.Handle(entityID, cmd)
+			//s.TellEveryoneBut(id, fmt.Sprintf("%s %s", id, cmd))
+			s.lobby.Handle(entityID, cmd)
 		case err := <-c.E:
 			log.Println(err)
 			return

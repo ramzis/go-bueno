@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-func (b *server) HandleLobbyMessages() {
+func (s *server) HandleLobbyMessages() {
 	go func() {
-		lobbyMsgChan := b.lobby.GetMessageChan()
+		lobbyMsgChan := s.lobby.GetMessageChan()
 
 		for {
 			select {
@@ -25,8 +25,8 @@ func (b *server) HandleLobbyMessages() {
 					log.Println("Invalid length in lobby msg chan handler")
 					continue
 				}
-				to := b.resolver[entity.ID(split[5])]
-				b.TellOne(to, fmt.Sprintf("%s@%s %s", split[1], split[3], strings.Join(split[6:], " ")))
+				to := s.resolver[entity.ID(split[5])]
+				s.TellOne(to, fmt.Sprintf("%s@%s %s", split[1], split[3], strings.Join(split[6:], " ")))
 			}
 		}
 	}()
