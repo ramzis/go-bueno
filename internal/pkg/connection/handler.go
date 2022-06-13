@@ -107,7 +107,7 @@ func Decode(s string) ([]string, error) {
 	return cmd, nil
 }
 
-func KeepAlive(conn net.Conn, ka chan struct{}, isServer bool) {
+func KeepAlive(conn net.Conn, ka chan struct{}, errChan chan string, isServer bool) {
 	var rxDelay, txDelay, netDelay time.Duration
 	if isServer {
 		rxDelay = time.Duration(0)
@@ -133,13 +133,23 @@ func KeepAlive(conn net.Conn, ka chan struct{}, isServer bool) {
 		ticker.Reset(rxDelay + netDelay)
 	}
 
+	if isServer {
+		//log.Println("Server sending initial KA")
+		writeKeepAlive(txDelay)
+	}
+
 	for {
 		select {
 		case <-ticker.C:
-			log.Println("timed out waiting for KA")
-			ka <- struct{}{}
+			errChan <- "timed out waiting for KA"
+			close(errChan)
 			return
-		case <-ka:
+		case _, ok := <-ka:
+			if !ok {
+				errChan <- "received on closed keep alive channel"
+				close(errChan)
+				return
+			}
 			//log.Println("Received KA")
 			writeKeepAlive(txDelay)
 		}
@@ -160,10 +170,8 @@ func HandleConnection(conn net.Conn, isServer bool) *Connection {
 		}
 
 		keepAliveChan := make(chan struct{})
-		go KeepAlive(conn, keepAliveChan, isServer)
-		if isServer {
-			keepAliveChan <- struct{}{}
-		}
+		keepAliveErrChan := make(chan string)
+		go KeepAlive(conn, keepAliveChan, keepAliveErrChan, isServer)
 
 		readChan := make(chan string)
 		readErrChan := make(chan string)
@@ -178,13 +186,13 @@ func HandleConnection(conn net.Conn, isServer bool) *Connection {
 		var ok bool
 		for {
 			select {
-			case _, ok := <-keepAliveChan:
+			case s, ok := <-keepAliveErrChan:
 				if !ok {
-					e <- "Keep Alive channel closed but shouldn't be!"
+					e <- "closed keep alive error channel from error"
+					close(keepAliveChan)
 					return
 				}
-				close(keepAliveChan)
-				e <- "failed to receive KA"
+				e <- s
 				return
 			case msg, ok := <-w:
 				if !ok {
