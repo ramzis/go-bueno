@@ -1,17 +1,17 @@
 package client
 
 import (
-	handler "github.com/ramzis/bueno/internal/pkg/connection"
+	"github.com/ramzis/bueno/internal/pkg/connection"
 	"log"
 	"net"
 	"strings"
 )
 
 func HandleConnection(conn net.Conn) {
-	c := handler.HandleConnection(conn, false)
+	c := connection.HandleConnection(conn, false)
 
 	input := make(chan string)
-	go handler.ReadInput(input)
+	go connection.ReadInput(input)
 
 	for {
 		select {

@@ -2,13 +2,13 @@ package server
 
 import (
 	"fmt"
-	handler "github.com/ramzis/bueno/internal/pkg/connection"
+	"github.com/ramzis/bueno/internal/pkg/connection"
 	"log"
 	"net"
 )
 
 func (b *server) HandleConnection(conn net.Conn) {
-	c := handler.HandleConnection(conn, true)
+	c := connection.HandleConnection(conn, true)
 
 	id := conn.RemoteAddr().String()
 

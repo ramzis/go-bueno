@@ -8,7 +8,7 @@ import (
 )
 
 type server struct {
-	conns     map[string]*handler.Connection
+	conns     map[string]*connection.Connection
 	listeners []func()
 	lobby     lobby.Lobby
 	resolver  map[entity.ID]string
@@ -16,12 +16,12 @@ type server struct {
 
 type Server interface {
 	HandleConnection(conn net.Conn)
-	RegisterConn(id string, conn *handler.Connection)
+	RegisterConn(id string, conn *connection.Connection)
 }
 
 func New(lobby lobby.Lobby) Server {
 	s := &server{
-		conns:     make(map[string]*handler.Connection, 0),
+		conns:     make(map[string]*connection.Connection, 0),
 		listeners: make([]func(), 0),
 		lobby:     lobby,
 		resolver:  make(map[entity.ID]string),
@@ -30,7 +30,7 @@ func New(lobby lobby.Lobby) Server {
 	return s
 }
 
-func (b *server) RegisterConn(id string, conn *handler.Connection) {
+func (b *server) RegisterConn(id string, conn *connection.Connection) {
 	b.conns[id] = conn
 	b.OnUpdateConns()
 }
