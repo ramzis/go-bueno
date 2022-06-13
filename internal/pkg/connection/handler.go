@@ -107,8 +107,19 @@ func Decode(s string) ([]string, error) {
 	return cmd, nil
 }
 
-func KeepAlive(conn net.Conn, ka chan struct{}, rxDelay, txDelay, networkDelay time.Duration) {
-	ticker := time.NewTicker(rxDelay + networkDelay)
+func KeepAlive(conn net.Conn, ka chan struct{}, isServer bool) {
+	var rxDelay, txDelay, netDelay time.Duration
+	if isServer {
+		rxDelay = time.Duration(0)
+		txDelay = time.Second * 5
+		netDelay = time.Second * 1
+	} else {
+		rxDelay = time.Second * 5
+		txDelay = time.Duration(0)
+		netDelay = time.Second * 1
+	}
+
+	ticker := time.NewTicker(rxDelay + netDelay)
 	defer ticker.Stop()
 	w := bufio.NewWriter(conn)
 
@@ -119,7 +130,7 @@ func KeepAlive(conn net.Conn, ka chan struct{}, rxDelay, txDelay, networkDelay t
 		w.WriteString("KA")
 		w.WriteByte(0x0)
 		w.Flush()
-		ticker.Reset(rxDelay + networkDelay)
+		ticker.Reset(rxDelay + netDelay)
 	}
 
 	for {
@@ -148,19 +159,8 @@ func HandleConnection(conn net.Conn, isServer bool) *Connection {
 			return
 		}
 
-		var rxDelay, txDelay, netDelay time.Duration
-		if isServer {
-			rxDelay = time.Duration(0)
-			txDelay = time.Second * 5
-			netDelay = time.Second * 1
-
-		} else {
-			rxDelay = time.Second * 5
-			txDelay = time.Duration(0)
-			netDelay = time.Second * 1
-		}
 		keepAliveChan := make(chan struct{})
-		go KeepAlive(conn, keepAliveChan, rxDelay, txDelay, netDelay)
+		go KeepAlive(conn, keepAliveChan, isServer)
 		if isServer {
 			keepAliveChan <- struct{}{}
 		}
