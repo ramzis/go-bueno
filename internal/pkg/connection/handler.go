@@ -159,15 +159,15 @@ func HandleConnection(conn net.Conn, isServer bool) *Connection {
 			txDelay = time.Duration(0)
 			netDelay = time.Second * 1
 		}
-		keepAlive := make(chan struct{})
-		go KeepAlive(conn, keepAlive, rxDelay, txDelay, netDelay)
+		keepAliveChan := make(chan struct{})
+		go KeepAlive(conn, keepAliveChan, rxDelay, txDelay, netDelay)
 		if isServer {
-			keepAlive <- struct{}{}
+			keepAliveChan <- struct{}{}
 		}
 
-		msgChan := make(chan string)
-		msgErrChan := make(chan string)
-		go ReadConn(conn, msgChan, msgErrChan)
+		readChan := make(chan string)
+		readErrChan := make(chan string)
+		go ReadConn(conn, readChan, readErrChan)
 
 		writeChan := make(chan string)
 		writeErrChan := make(chan string)
@@ -178,12 +178,12 @@ func HandleConnection(conn net.Conn, isServer bool) *Connection {
 		var ok bool
 		for {
 			select {
-			case _, ok := <-keepAlive:
+			case _, ok := <-keepAliveChan:
 				if !ok {
 					e <- "Keep Alive channel closed but shouldn't be!"
 					return
 				}
-				close(keepAlive)
+				close(keepAliveChan)
 				e <- "failed to receive KA"
 				return
 			case msg, ok := <-w:
@@ -200,14 +200,14 @@ func HandleConnection(conn net.Conn, isServer bool) *Connection {
 				}
 				log.Println("error writing message", s)
 				continue
-			case s, ok = <-msgChan:
+			case s, ok = <-readChan:
 				if !ok {
 					e <- "closed message channel from error"
 					return
 				}
 				break
 				//log.Println("reading...")
-			case s, ok := <-msgErrChan:
+			case s, ok := <-readErrChan:
 				if !ok {
 					e <- "closed message error channel from error"
 					return
@@ -226,7 +226,7 @@ func HandleConnection(conn net.Conn, isServer bool) *Connection {
 			case "HI":
 				log.Println("unexpected HI after handshake")
 			case "KA":
-				keepAlive <- struct{}{}
+				keepAliveChan <- struct{}{}
 			case "MSG":
 				if len(cmd) > 1 {
 					msg := strings.Join(cmd[1:], " ")
